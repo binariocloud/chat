@@ -1,0 +1,221 @@
+heat_template_version: 2015-10-15
+
+description: Infra LBaaS
+
+parameters:
+#------------------#
+# Stack Parameters #
+#------------------#
+  public_net:
+    label: Public network address
+    default: dfa37f36-5241-4a2e-9de5-3a85afe10952
+    description: Public Network ID
+    type: string
+  private_network_net:
+    label: Private network address
+    default: 192.168.0.0/24
+    description: Private network address (e.g. 192.168.0.0/24)
+    type: string
+  flavor:
+    default: 25cb69e2-c9ab-4498-8832-5f779d893b71
+    description: Flavor of the servers
+    type: string
+    constraints:
+    - custom_constraint: nova.flavor
+  image:
+    default: eb68545a-d538-4491-94eb-4aacfe191485
+    description: Image to use to boot the servers
+    type: string
+    constraints:
+    - custom_constraint: glance.image
+  keypair:
+    default: WEB
+    description: Please create the keypair before launching this stack
+    type: string
+    constraints:
+    - custom_constraint: nova.keypair
+  lb_port:
+    label: Load balancer Port
+    default: 80
+    description: Port used by the load balancer
+    type: number
+  app_port:
+    label: Application Port
+    default: 80
+    description: Port used by the servers
+    type: number
+
+
+resources:
+#--------------------#
+# Network properties #
+#--------------------#
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: 'Security group for ICMP, HTTP and SSH'
+      name: sec-group-BC01
+      rules:
+      - direction: egress
+        ethertype: IPv4
+        remote_ip_prefix: 0.0.0.0/0
+      - direction: ingress
+        protocol: icmp
+      - direction: ingress
+        ethertype: IPv4
+        port_range_max: 80
+        port_range_min: 80
+        protocol: tcp
+      - direction: ingress
+        ethertype: IPv4
+        port_range_max: 22
+        port_range_min: 22
+        protocol: tcp
+
+  private_network:
+    type: OS::Neutron::Net
+    properties:
+      admin_state_up: true
+      name: net-b1
+      shared: false
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: private_network
+    properties:
+      name: subnet-b1
+      network_id: { get_resource: private_network }
+      cidr: { get_param: private_network_net }
+      ip_version: 4
+      enable_dhcp: true
+      dns_nameservers:
+      - 8.8.8.8
+      host_routes: []
+
+#----------------------#
+# Router for SourceNAT #
+#----------------------#
+  router:
+    type: OS::Neutron::Router
+    depends_on: private_subnet
+    properties:
+      name: router-b1
+      admin_state_up: true
+      external_gateway_info:
+        network: { get_param: public_net }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on: router
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: private_subnet }
+
+#-------------------------#
+# Server nodes properties #
+#-------------------------#
+  front_node_1:
+    type: OS::Nova::Server
+    depends_on: private_subnet
+    properties:
+      name: front-node-1
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: keypair }
+      security_groups: [ { get_resource: security_group } ]
+      networks: [{ network: { get_resource: private_network }} ]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            sudo -i
+            apt update
+            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
+            rm -rf /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www/html
+          params:
+            $shared_ip: { get_param: flavor }
+
+  front_node_2:
+    type: OS::Nova::Server
+    depends_on: private_subnet
+    properties:
+      name: front-node-2
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: keypair }
+      security_groups: [ { get_resource: security_group } ]
+      networks: [{ network: { get_resource: private_network }} ]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            sudo -i
+            apt update
+            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
+            rm -rf /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www/html
+          params:
+            $shared_ip: { get_param: flavor }
+
+#--------------------------#
+# Load Balancer properties #
+#--------------------------#
+  pool_member1:
+    type: OS::Neutron::LBaaS::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ front_node_1, first_address ]}
+      protocol_port: { get_param: app_port }
+      subnet: { get_resource: private_subnet }
+
+  pool_member2:
+    type: OS::Neutron::LBaaS::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ front_node_2, first_address ]}
+      protocol_port: { get_param: app_port }
+      subnet: { get_resource: private_subnet }
+
+  monitor:
+    type: OS::Neutron::LBaaS::HealthMonitor
+    properties:
+      type: HTTP
+      delay: 3
+      max_retries: 3
+      timeout: 5
+      pool: { get_resource: pool }
+
+  pool:
+    type: OS::Neutron::LBaaS::Pool
+    properties:
+      lb_algorithm: ROUND_ROBIN
+      protocol: HTTP
+      listener: { get_resource: listener }
+
+  listener:
+    type: OS::Neutron::LBaaS::Listener
+    properties:
+      loadbalancer: { get_resource: loadbalancer }
+      protocol: HTTP
+      protocol_port: { get_param: lb_port }
+
+  loadbalancer:
+    type: OS::Neutron::LBaaS::LoadBalancer
+    depends_on: router_interface
+    properties:
+      vip_subnet: { get_resource: private_subnet }
+
+  lb_vip_floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: loadbalancer
+    properties:
+      floating_network_id: { get_param: public_net }
+      port_id: { get_attr: [loadbalancer, vip_port_id] }
+
+outputs:
+  LBaaS_floating_ip:
+    description: load balancer floating IP address
+    value: { get_attr: [ lb_vip_floating_ip, floating_ip_address ] }
