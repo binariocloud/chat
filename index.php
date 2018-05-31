@@ -14,7 +14,6 @@
 		<!-- Header -->
 			<header id="header">
 				<a class="logo" href=""><img src="images/logo-binario-cloud.png"></a>
-				<?=gethostname();?>
 				<nav>
 					<a href="#menu">Menu</a>
 				</nav>
