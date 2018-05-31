@@ -1,6 +1,7 @@
 heat_template_version: 2015-10-15
 
 description: Infra LBaaS
+name: test
 
 parameters:
 #------------------#
