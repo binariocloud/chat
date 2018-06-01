@@ -1,5 +1,5 @@
-heat_template_version: 2018-05-30
-stack_name: teste
+heat_template_version: 2017-09-01
+
 description: Infra LBaaS
 
 parameters:
@@ -11,10 +11,15 @@ parameters:
     default: dfa37f36-5241-4a2e-9de5-3a85afe10952
     description: Public Network ID
     type: string
-  private_network_net:
-    label: Private network address
+  dmz_network_net:
+    label: DMZ network address
     default: 192.168.0.0/24
     description: Private network address (e.g. 192.168.0.0/24)
+    type: string
+  db_network_net:
+    label: Database network address
+    default: 192.168.1.0/24
+    description: Private network address (e.g. 192.168.1.0/24)
     type: string
   flavor:
     default: 25cb69e2-c9ab-4498-8832-5f779d893b71
@@ -28,8 +33,13 @@ parameters:
     type: string
     constraints:
     - custom_constraint: glance.image
-  keypair:
+  web_keypair:
     default: WEB
+    description: Please create the keypair before launching this stack
+    type: string
+    constraints:
+  db_keypair:
+    default: DB
     description: Please create the keypair before launching this stack
     type: string
     constraints:
@@ -50,11 +60,11 @@ resources:
 #--------------------#
 # Network properties #
 #--------------------#
-  security_group:
+  dmz_security_group:
     type: OS::Neutron::SecurityGroup
     properties:
       description: 'Security group for ICMP, HTTP and SSH'
-      name: sec-group-BC01
+      name: dmz-sec-group
       rules:
       - direction: egress
         ethertype: IPv4
@@ -72,58 +82,132 @@ resources:
         port_range_min: 22
         protocol: tcp
 
-  private_network:
+  db_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: 'Security group for ICMP, MySQL and SSH'
+      name: db-sec-group
+      rules:
+      - direction: egress
+        ethertype: IPv4
+        remote_ip_prefix: 0.0.0.0/0
+      - direction: ingress
+        protocol: icmp
+      - direction: ingress
+        ethertype: IPv4
+        port_range_max: 3306
+        port_range_min: 3306
+        protocol: tcp
+      - direction: ingress
+        ethertype: IPv4
+        port_range_max: 22
+        port_range_min: 22
+        protocol: tcp
+
+  dmz_network:
     type: OS::Neutron::Net
     properties:
       admin_state_up: true
-      name: net-b1
+      name: dmz-network
       shared: false
 
-  private_subnet:
+  dmz_subnet:
     type: OS::Neutron::Subnet
-    depends_on: private_network
+    depends_on: dmz_network
     properties:
-      name: subnet-b1
-      network_id: { get_resource: private_network }
-      cidr: { get_param: private_network_net }
+      name: dmz-subnet
+      network_id: { get_resource: dmz_network }
+      cidr: { get_param: dmz_network_net }
       ip_version: 4
       enable_dhcp: true
       dns_nameservers:
       - 8.8.8.8
-      host_routes: []
+      - 8.8.4.4
+      host_routes: [ {destination: "192.168.1.0/24", nexthop: "192.168.0.254"} ]
+
+  dmz_db_port:
+    type: OS::Neutron::Port
+    depends_on: dmz_subnet
+    properties:
+      network_id: { get_resource: dmz_network }
+      fixed_ips:
+        - ip_address: 192.168.0.254
+          subnet: { get_resource: dmz_subnet }
+
+  db_network:
+    type: OS::Neutron::Net
+    properties:
+      admin_state_up: true
+      name: db-network
+      shared: false
+
+  db_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: db_network
+    properties:
+      name: db-subnet
+      network_id: { get_resource: db_network }
+      cidr: { get_param: db_network_net }
+      ip_version: 4
+      enable_dhcp: true
+      dns_nameservers:
+      - 8.8.8.8
+      - 8.8.4.4
+      host_routes: [ {destination: "0.0.0.0/0", nexthop: "192.168.0.1"} ]
 
 #----------------------#
 # Router for SourceNAT #
 #----------------------#
-  router:
+  dmz_router:
     type: OS::Neutron::Router
-    depends_on: private_subnet
+    depends_on: dmz_subnet
     properties:
-      name: router-b1
+      name: dmz-router
       admin_state_up: true
       external_gateway_info:
         network: { get_param: public_net }
 
-  router_interface:
+  dmz_router_interface:
     type: OS::Neutron::RouterInterface
-    depends_on: router
+    depends_on: dmz_router
     properties:
-      router: { get_resource: router }
-      subnet: { get_resource: private_subnet }
+      router: { get_resource: dmz_router }
+      subnet: { get_resource: dmz_subnet }
+
+  db_router:
+    type: OS::Neutron::Router
+    depends_on: db_subnet
+    properties:
+      name: db-router
+      admin_state_up: true
+      
+  db_router_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on: db_router
+    properties:
+      router: { get_resource: db_router }
+      subnet: { get_resource: db_subnet }
+
+  db_dmz_router_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on: [ db_router, dmz_db_port ]
+    properties:
+      router: { get_resource: db_router }
+      port: { get_resource: dmz_db_port }
 
 #-------------------------#
 # Server nodes properties #
 #-------------------------#
-  front_node_1:
+  db_srv_1:
     type: OS::Nova::Server
-    depends_on: private_subnet
+    depends_on: db_subnet
     properties:
-      name: front-node-1
+      name: db-srv-1
       image: { get_param: image }
       flavor: { get_param: flavor }
-      key_name: { get_param: keypair }
-      security_groups: [ { get_resource: security_group } ]
-      networks: [{ network: { get_resource: private_network }} ]
+      key_name: { get_param: db_keypair }
+      security_groups: [ { get_resource: db_security_group } ]
+      networks: [{ network: { get_resource: db_network }} ]
       user_data_format: RAW
       user_data:
         str_replace:
@@ -137,16 +221,108 @@ resources:
           params:
             $shared_ip: { get_param: flavor }
 
-  front_node_2:
+  db_srv_2:
     type: OS::Nova::Server
-    depends_on: private_subnet
+    depends_on: db_subnet
     properties:
-      name: front-node-2
+      name: db-srv-2
       image: { get_param: image }
       flavor: { get_param: flavor }
-      key_name: { get_param: keypair }
-      security_groups: [ { get_resource: security_group } ]
-      networks: [{ network: { get_resource: private_network }} ]
+      key_name: { get_param: db_keypair }
+      security_groups: [ { get_resource: db_security_group } ]
+      networks: [{ network: { get_resource: db_network }} ]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            sudo -i
+            apt update
+            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
+            rm -rf /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www/html
+          params:
+            $shared_ip: { get_param: flavor }
+
+  web_srv_1:
+    type: OS::Nova::Server
+    depends_on: dmz_subnet
+    properties:
+      name: web-srv-1
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: web_keypair }
+      security_groups: [ { get_resource: dmz_security_group } ]
+      networks: [{ network: { get_resource: dmz_network }} ]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            sudo -i
+            apt update
+            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
+            rm -rf /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www/html
+          params:
+            $shared_ip: { get_param: flavor }
+
+  web_srv_2:
+    type: OS::Nova::Server
+    depends_on: dmz_subnet
+    properties:
+      name: web-srv-2
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: web_keypair }
+      security_groups: [ { get_resource: dmz_security_group } ]
+      networks: [{ network: { get_resource: dmz_network }} ]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            sudo -i
+            apt update
+            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
+            rm -rf /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www/html
+          params:
+            $shared_ip: { get_param: flavor }
+
+  web_srv_3:
+    type: OS::Nova::Server
+    depends_on: dmz_subnet
+    properties:
+      name: web-srv-3
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: web_keypair }
+      security_groups: [ { get_resource: dmz_security_group } ]
+      networks: [{ network: { get_resource: dmz_network }} ]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            sudo -i
+            apt update
+            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
+            rm -rf /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www/html
+          params:
+            $shared_ip: { get_param: flavor }
+
+  web_srv_4:
+    type: OS::Nova::Server
+    depends_on: dmz_subnet
+    properties:
+      name: web-srv-4
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: web_keypair }
+      security_groups: [ { get_resource: dmz_security_group } ]
+      networks: [{ network: { get_resource: dmz_network }} ]
       user_data_format: RAW
       user_data:
         str_replace:
@@ -167,17 +343,33 @@ resources:
     type: OS::Neutron::LBaaS::PoolMember
     properties:
       pool: { get_resource: pool }
-      address: { get_attr: [ front_node_1, first_address ]}
+      address: { get_attr: [ web_srv_1, first_address ]}
       protocol_port: { get_param: app_port }
-      subnet: { get_resource: private_subnet }
+      subnet: { get_resource: dmz_subnet }
 
   pool_member2:
     type: OS::Neutron::LBaaS::PoolMember
     properties:
       pool: { get_resource: pool }
-      address: { get_attr: [ front_node_2, first_address ]}
+      address: { get_attr: [ web_srv_2, first_address ]}
       protocol_port: { get_param: app_port }
-      subnet: { get_resource: private_subnet }
+      subnet: { get_resource: dmz_subnet }
+
+  pool_member3:
+    type: OS::Neutron::LBaaS::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ web_srv_3, first_address ]}
+      protocol_port: { get_param: app_port }
+      subnet: { get_resource: dmz_subnet }
+
+  pool_member4:
+    type: OS::Neutron::LBaaS::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ web_srv_4, first_address ]}
+      protocol_port: { get_param: app_port }
+      subnet: { get_resource: dmz_subnet }
 
   monitor:
     type: OS::Neutron::LBaaS::HealthMonitor
@@ -204,9 +396,9 @@ resources:
 
   loadbalancer:
     type: OS::Neutron::LBaaS::LoadBalancer
-    depends_on: router_interface
+    depends_on: dmz_router_interface
     properties:
-      vip_subnet: { get_resource: private_subnet }
+      vip_subnet: { get_resource: dmz_subnet }
 
   lb_vip_floating_ip:
     type: OS::Neutron::FloatingIP
