@@ -192,7 +192,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www
           params:
             $shared_ip: { get_param: flavor }
 
@@ -215,7 +215,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www
           params:
             $shared_ip: { get_param: flavor }
 
@@ -238,7 +238,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www
           params:
             $shared_ip: { get_param: flavor }
 
@@ -261,7 +261,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www
           params:
             $shared_ip: { get_param: flavor }
 
@@ -284,7 +284,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www
           params:
             $shared_ip: { get_param: flavor }
 
@@ -307,7 +307,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www/html
+            git clone https://github.com/binariocloud/html.git -l /var/www
           params:
             $shared_ip: { get_param: flavor }
 
