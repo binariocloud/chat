@@ -123,16 +123,6 @@ resources:
       dns_nameservers:
       - 8.8.8.8
       - 8.8.4.4
-      host_routes: [ {destination: "192.168.1.0/24", nexthop: "192.168.0.254"} ]
-
-  dmz_db_port:
-    type: OS::Neutron::Port
-    depends_on: dmz_subnet
-    properties:
-      network_id: { get_resource: dmz_network }
-      fixed_ips:
-        - ip_address: 192.168.0.254
-          subnet: { get_resource: dmz_subnet }
 
   db_network:
     type: OS::Neutron::Net
@@ -153,47 +143,32 @@ resources:
       dns_nameservers:
       - 8.8.8.8
       - 8.8.4.4
-      host_routes: [ {destination: "0.0.0.0/0", nexthop: "192.168.0.1"} ]
 
 #----------------------#
 # Router for SourceNAT #
 #----------------------#
-  dmz_router:
+  router:
     type: OS::Neutron::Router
     depends_on: dmz_subnet
     properties:
-      name: dmz-router
+      name: router
       admin_state_up: true
       external_gateway_info:
         network: { get_param: public_net }
 
   dmz_router_interface:
     type: OS::Neutron::RouterInterface
-    depends_on: dmz_router
+    depends_on: router
     properties:
-      router: { get_resource: dmz_router }
+      router: { get_resource: router }
       subnet: { get_resource: dmz_subnet }
-
-  db_router:
-    type: OS::Neutron::Router
-    depends_on: db_subnet
-    properties:
-      name: db-router
-      admin_state_up: true
       
   db_router_interface:
     type: OS::Neutron::RouterInterface
-    depends_on: db_router
+    depends_on: router
     properties:
-      router: { get_resource: db_router }
+      router: { get_resource: router }
       subnet: { get_resource: db_subnet }
-
-  db_dmz_router_interface:
-    type: OS::Neutron::RouterInterface
-    depends_on: [ db_router, dmz_db_port ]
-    properties:
-      router: { get_resource: db_router }
-      port: { get_resource: dmz_db_port }
 
 #-------------------------#
 # Server nodes properties #
