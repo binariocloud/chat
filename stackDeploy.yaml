@@ -193,6 +193,8 @@ resources:
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
             git clone https://github.com/binariocloud/html.git -l /var/www
+            touch /var/www/assets/chat.txt
+            chmod 666 /var/www/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -216,6 +218,8 @@ resources:
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
             git clone https://github.com/binariocloud/html.git -l /var/www
+            touch /var/www/assets/chat.txt
+            chmod 666 /var/www/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -239,6 +243,8 @@ resources:
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
             git clone https://github.com/binariocloud/html.git -l /var/www
+            touch /var/www/assets/chat.txt
+            chmod 666 /var/www/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -262,6 +268,8 @@ resources:
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
             git clone https://github.com/binariocloud/html.git -l /var/www
+            touch /var/www/assets/chat.txt
+            chmod 666 /var/www/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -285,6 +293,8 @@ resources:
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
             git clone https://github.com/binariocloud/html.git -l /var/www
+            touch /var/www/assets/chat.txt
+            chmod 666 /var/www/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -308,6 +318,8 @@ resources:
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
             git clone https://github.com/binariocloud/html.git -l /var/www
+            touch /var/www/assets/chat.txt
+            chmod 666 /var/www/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
