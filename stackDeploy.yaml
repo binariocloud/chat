@@ -3,9 +3,9 @@ heat_template_version: 2017-09-01
 description: Infra LBaaS
 
 parameters:
-#------------------#
-# Stack Parameters #
-#------------------#
+#-------------------#
+# Stack Parameters  #
+#-------------------#
   public_net:
     label: Public network address
     default: dfa37f36-5241-4a2e-9de5-3a85afe10952
