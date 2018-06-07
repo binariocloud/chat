@@ -190,11 +190,6 @@ resources:
             #! /bin/sh -v
             sudo -i
             apt update
-            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
-            rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www
-            touch /var/www/html/assets/chat.txt
-            chmod 666 /var/www/html/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -215,11 +210,6 @@ resources:
             #! /bin/sh -v
             sudo -i
             apt update
-            apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
-            rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www
-            touch /var/www/html/assets/chat.txt
-            chmod 666 /var/www/html/assets/chat.txt
           params:
             $shared_ip: { get_param: flavor }
 
@@ -242,7 +232,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www
+            git clone https://github.com/binariocloud/chat.git -l /var/www
             touch /var/www/html/assets/chat.txt
             chmod 666 /var/www/html/assets/chat.txt
           params:
@@ -267,7 +257,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www
+            git clone https://github.com/binariocloud/chat.git -l /var/www
             touch /var/www/html/assets/chat.txt
             chmod 666 /var/www/html/assets/chat.txt
           params:
@@ -292,7 +282,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www
+            git clone https://github.com/binariocloud/chat.git -l /var/www
             touch /var/www/html/assets/chat.txt
             chmod 666 /var/www/html/assets/chat.txt
           params:
@@ -317,7 +307,7 @@ resources:
             apt update
             apt install -y apache2 git php php-mcrypt php-mysql libapache2-mod-php
             rm -rf /var/www/html
-            git clone https://github.com/binariocloud/html.git -l /var/www
+            git clone https://github.com/binariocloud/chat.git -l /var/www
             touch /var/www/html/assets/chat.txt
             chmod 666 /var/www/html/assets/chat.txt
           params:
