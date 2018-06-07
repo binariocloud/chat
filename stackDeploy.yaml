@@ -235,6 +235,7 @@ resources:
             git clone https://github.com/binariocloud/chat.git -l /var/www
             touch /var/www/html/assets/chat.txt
             chmod 666 /var/www/html/assets/chat.txt
+            echo  { get_attr: [ web_srv_1, first_address ]} web-srv-1 >> /etc/hosts
           params:
             $shared_ip: { get_param: flavor }
 
