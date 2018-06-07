@@ -1,2 +1,2 @@
-# html
-Minimal html for test
+# Binario Cloud Chat
+Minimal chat tool for demo
