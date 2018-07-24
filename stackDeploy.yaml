@@ -8,7 +8,7 @@ parameters:
 #-------------------#
   public_net:
     label: Public network address
-    default: dfa37f36-5241-4a2e-9de5-3a85afe10952
+    default: 38638eba-4bc2-422c-b440-f7fe1ffcd80b
     description: Public Network ID
     type: string
   dmz_network_net:
@@ -22,13 +22,13 @@ parameters:
     description: Private network address (e.g. 192.168.1.0/24)
     type: string
   flavor:
-    default: 25cb69e2-c9ab-4498-8832-5f779d893b71
+    default: 49c736fc-ce91-463c-af49-1ac93a750d9c
     description: Flavor of the servers
     type: string
     constraints:
     - custom_constraint: nova.flavor
   image:
-    default: eb68545a-d538-4491-94eb-4aacfe191485
+    default: 51c2560d-de51-423f-9c09-0a5ee291ba8b
     description: Image to use to boot the servers
     type: string
     constraints:
