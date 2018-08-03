@@ -28,7 +28,7 @@ parameters:
     constraints:
     - custom_constraint: nova.flavor
   image:
-    default: 51c2560d-de51-423f-9c09-0a5ee291ba8b
+    default: 86751a78-fca9-4a92-a1be-a1da0c1d9895
     description: Image to use to boot the servers
     type: string
     constraints:
