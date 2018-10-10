@@ -38,6 +38,7 @@ parameters:
     description: Please create the keypair before launching this stack
     type: string
     constraints:
+    - custom_constraint: nova.keypair
   db_keypair:
     default: svc-bc
     description: Please create the keypair before launching this stack
