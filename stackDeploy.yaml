@@ -34,12 +34,12 @@ parameters:
     constraints:
     - custom_constraint: glance.image
   web_keypair:
-    default: WEB
+    default: svc-bc
     description: Please create the keypair before launching this stack
     type: string
     constraints:
   db_keypair:
-    default: DB
+    default: svc-bc
     description: Please create the keypair before launching this stack
     type: string
     constraints:
