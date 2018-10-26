@@ -142,9 +142,6 @@ resources:
       - 8.8.8.8
       - 8.8.4.4
 
-#----------------------#
-# Router for SourceNAT #
-#----------------------#
   router:
     type: OS::Neutron::Router
     depends_on: dmz_subnet
@@ -168,9 +165,6 @@ resources:
       router: { get_resource: router }
       subnet: { get_resource: db_subnet }
 
-#-------------------------#
-# Server nodes properties #
-#-------------------------#
   db_srv_1:
     type: OS::Nova::Server
     depends_on: db_subnet
