@@ -3,9 +3,6 @@ heat_template_version: 2017-09-01
 description: Infra LBaaS
 
 parameters:
-#-------------------#
-# Stack Parameters  #
-#-------------------#
   public_net:
     label: Public network address
     default: 38638eba-4bc2-422c-b440-f7fe1ffcd80b
@@ -163,7 +160,7 @@ resources:
     properties:
       router: { get_resource: router }
       subnet: { get_resource: dmz_subnet }
-      
+
   db_router_interface:
     type: OS::Neutron::RouterInterface
     depends_on: router
