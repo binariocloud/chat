@@ -1,2 +1,2 @@
 # Binario Cloud Chat
-Minimal chat tool for demo
+Minimal chat tool for demo in Binario Cloud
