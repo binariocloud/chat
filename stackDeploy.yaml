@@ -31,13 +31,13 @@ parameters:
     constraints:
     - custom_constraint: glance.image
   web_keypair:
-    default: svc-bc
+    default: WEB
     description: Please create the keypair before launching this stack
     type: string
     constraints:
     - custom_constraint: nova.keypair
   db_keypair:
-    default: svc-bc
+    default: DB
     description: Please create the keypair before launching this stack
     type: string
     constraints:
